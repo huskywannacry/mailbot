@@ -59,26 +59,44 @@ class MailSender:
         :param in_from: Sender address (optional, whether this setting is copied by the SMTP server depends on the server's settings)
         :param in_htmltext: HTML version of the email body (optional) (If you want to use an HTML message but set it later, pass an empty string here)
         """
+        # --- BẮT ĐẦU PHẦN SỬA LỖI ---
 
         if in_htmltext is not None:
             self.html_ready = True
-        else:
-            self.html_ready = False
-
-        if self.html_ready:
-            self.msg = MIMEMultipart('alternative')  # 'alternative' allows attaching an html version of the message later
-            part = MIMEBase('application', "octet-stream")
-
-            part.set_payload(open(attachment, "rb").read())
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition', "attachment; filename=" + filename)
-            self.msg.attach(part)
+            # Tạo một email đa phần (multipart) để chứa cả text và html
+            self.msg = MIMEMultipart('alternative')
             self.msg.attach(MIMEText(in_plaintext, 'plain'))
             self.msg.attach(MIMEText(in_htmltext, 'html'))
+            
+            # Chỉ xử lý attachment nếu nó được cung cấp
+            if attachment is not None and filename is not None:
+                # Nếu có attachment, chúng ta cần thay đổi cấu trúc message
+                # thành 'mixed' để chứa cả phần 'alternative' và attachment.
+                # Đoạn code này được giữ lại để tương thích với logic cũ của file,
+                # nhưng nó sẽ không chạy vì bạn không cung cấp attachment.
+                # Đây là cách sửa đơn giản nhất để code bạn chạy được.
+                # Một cách sửa "đúng" hơn sẽ phức tạp hơn.
+                
+                # Bọc message 'alternative' hiện tại vào trong một message 'mixed' mới
+                mixed_msg = MIMEMultipart('mixed')
+                mixed_msg.attach(self.msg)
+                self.msg = mixed_msg # Giờ self.msg là 'mixed'
+
+                # Tạo và đính kèm attachment
+                part = MIMEBase('application', "octet-stream")
+                with open(attachment, "rb") as file:
+                    part.set_payload(file.read())
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', f"attachment; filename={filename}")
+                self.msg.attach(part)
 
         else:
+            self.html_ready = False
             self.msg = MIMEText(in_plaintext, 'plain')
 
+        # --- KẾT THÚC PHẦN SỬA LỖI ---
+        
+        # Phần còn lại của hàm giữ nguyên
         self.msg['Subject'] = in_subject
         if in_from is None:
             self.msg['From'] = self.username

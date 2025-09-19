@@ -1,5 +1,9 @@
 import pandas as pd
 from sendmail import MailSender
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def name_format(name: str) -> str:
     words = name.strip().split()
@@ -23,7 +27,7 @@ Vui lòng hoàn thành trước 23:59 ngày 15/07/2025 để đảm bảo tiến
 
 Chúng tôi rất mong được chào đón bạn vào câu lạc bộ và cùng nhau tạo nên những giá trị và trải nghiệm tuyệt vời trong câu lạc bộ!
 
-Trân trọng,  
+Trân trọng,
 Ban Tổ chức PAYT
 
 ---------------------
@@ -31,26 +35,27 @@ Email: paytclub.ptit@gmail.com
 
 """
 
-ourmailsender = MailSender('paytclub.ptit@gmail.com', 'ctni dbcb tqqj rujn', ('smtp.gmail.com', 587))
+smtp_key = os.getenv('SMTP_KEY')
+ourmailsender = MailSender('paytclub.ptit@gmail.com', smtp_key, ('smtp.gmail.com', 587))
 
 ids = set()
 
 for index, row in data.iterrows():
-    
+
     if row['Mã sinh viên'] in ids or not row['Duyệt']:
-        continue 
-    
+        continue
+
     personalized_message = plaintext.format(name=row['Họ và tên'])
 
     ourmailsender.set_message(personalized_message, "Tiếp Tục Hành Trình Cùng PAYT", "Ban Tổ chức PAYT")
     ourmailsender.set_recipients([row['Email']])
     ourmailsender.connect()
     ourmailsender.send_all()
-    
+
     ids.add(row['Mã sinh viên'])
 
 # ourmailsender.set_message(plaintext.format(name='Nguyễn Minh Quang'), "PAYT - Nộp CV Để Tiếp Tục Hành Trình", "Ban Tổ chức PAYT")
-    
+
 # ourmailsender.set_recipients(['nguyenquang71103@gmail.com', 'tran.trung.kien@sun-asterisk.com'])
 
 # ourmailsender.connect()
